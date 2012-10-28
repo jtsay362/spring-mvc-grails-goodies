@@ -53,8 +53,9 @@ with ServletContextAware
       "org.codehaus.groovy.grails.APPLICATION_CONTEXT", applicationContext)                         	
   	
   	ServletsGrailsPluginSupport.enhanceServletApi()
-  	
-  	populateOptionsMap()
+  	    	
+  	mGrailsControllerAdapter = 
+  	  new GrailsControllerAdapter(makeOptionsMap())  	
   }
   
   override def
@@ -71,7 +72,7 @@ with ServletContextAware
     addDefaultObjects(request, springModel)
     
     val rv = mGrailsControllerAdapter.handleRequest(request, response, 
-        springModel, servletContext, applicationContext, mOptionsMap)
+        springModel, servletContext, applicationContext)
                             
     def computeDefaultViewName() : String =
     {      
@@ -116,32 +117,38 @@ with ServletContextAware
   {    
   }
 
-  protected def populateOptionsMap() : Unit =
-  {    
-    mOptionsMap.put(OPTION_NAME_PATH_PREFIX, pathPrefix)
-    mOptionsMap.put(OPTION_NAME_PATH_SUFFIX_TO_STRIP, pathSuffixToStrip)
-    mOptionsMap.put(OPTION_NAME_SOURCE_PATHS, sourcePaths)
-    mOptionsMap.put(OPTION_NAME_URL_MAPPINGS_CLASS_NAME, urlMappingsClassName)
-    mOptionsMap.put(OPTION_NAME_CONTROLLER_PACKAGE_NAME, controllerPackageName)
-    mOptionsMap.put(OPTION_NAME_DEVELOPMENT_MODE, developmentMode)            
+  protected def makeOptionsMap() : JMap[String, Object] =
+  {   
+    val optionsMap = new JHashMap[String, Object]()
+    optionsMap.put(OPTION_NAME_PATH_PREFIX, pathPrefix)
+    optionsMap.put(OPTION_NAME_PATH_SUFFIX_TO_STRIP, pathSuffixToStrip)
+    optionsMap.put(OPTION_NAME_URL_CASE_FORMAT, urlCaseFormat)
+    optionsMap.put(OPTION_NAME_SOURCE_PATHS, sourcePaths)
+    optionsMap.put(OPTION_NAME_URL_MAPPINGS_CLASS_NAME, urlMappingsClassName)
+    optionsMap.put(OPTION_NAME_CONTROLLER_PACKAGE_NAME, controllerPackageName)
+    optionsMap.put(OPTION_NAME_DEVELOPMENT_MODE, developmentMode)
+    optionsMap
   }
   
-  protected lazy val mGrailsControllerAdapter = new GrailsControllerAdapter()
+  protected var mGrailsControllerAdapter : GrailsControllerAdapter = _
   
   @BeanProperty
-  protected var pathPrefix : String = "/grails"
+  protected var pathPrefix : String = DEFAULT_PATH_PREFIX
 
   @BeanProperty
-  protected var pathSuffixToStrip : String = ""
+  protected var pathSuffixToStrip : String = DEFAULT_PATH_SUFFIX_TO_STRIP
+    
+  @BeanProperty
+  protected var urlCaseFormat : String = DEFAULT_URL_CASE_FORMAT
   
   @BeanProperty
-  protected var sourcePaths = Array("src/main/groovy")
+  protected var sourcePaths : Array[String] = DEFAULT_SOURCE_PATHS 
     
   @BeanProperty
   protected var urlMappingsClassName : String = DEFAULT_URL_MAPPINGS_CLASS_NAME 
   
   @BeanProperty
-  protected var controllerPackageName : String = ""
+  protected var controllerPackageName : String = DEFAULT_CONTROLLER_PACKAGE_NAME
 
   @BeanProperty
   protected var servletContext : ServletContext = _
@@ -150,9 +157,7 @@ with ServletContextAware
   protected var applicationContext : ApplicationContext = _
   
   @BeanProperty
-  protected var developmentMode : JBoolean = JBoolean.FALSE
-  
-  protected val mOptionsMap = new JHashMap[String, Object]() 
+  protected var developmentMode : JBoolean = DEFAULT_DEVELOPMENT_MODE
   
   private[this] val mLogger = LoggerFactory.getLogger(classOf[GrailsLikeController])
 }
@@ -161,9 +166,17 @@ object GrailsLikeController
 {
   val OPTION_NAME_PATH_PREFIX = "pathPrefix"
   val OPTION_NAME_PATH_SUFFIX_TO_STRIP = "pathSuffixToStrip"
+  val OPTION_NAME_URL_CASE_FORMAT = "urlCaseFormat"    
   val OPTION_NAME_SOURCE_PATHS = "sourcePaths"  
   val OPTION_NAME_URL_MAPPINGS_CLASS_NAME = "urlMappingsClassName"
   val OPTION_NAME_CONTROLLER_PACKAGE_NAME = "controllerPackageName"
   val OPTION_NAME_DEVELOPMENT_MODE = "developmentMode"
+    
+  val DEFAULT_PATH_PREFIX = "/grails"
+  val DEFAULT_PATH_SUFFIX_TO_STRIP = ""
+  val DEFAULT_URL_CASE_FORMAT = "LOWER_HYPHEN"
+  val DEFAULT_SOURCE_PATHS = Array("src/main/groovy")  
   val DEFAULT_URL_MAPPINGS_CLASS_NAME = "com.ngweb.web.springmvc.grails.UrlMappings"
+  val DEFAULT_CONTROLLER_PACKAGE_NAME = "com.ngweb.web.springmvc.grails"  
+  val DEFAULT_DEVELOPMENT_MODE = JBoolean.FALSE
 }

@@ -29,8 +29,22 @@ import org.slf4j.LoggerFactory
 
 class GrailsControllerAdapter 
 {	
-	GrailsControllerAdapter() 
+	GrailsControllerAdapter(Map options) 
 	{
+		mPathPrefix = options.pathPrefix
+		mPathSuffixToStrip = options.pathSuffixToStrip
+		
+		mDevelopmentMode = (options.developmentMode ?: false)
+		mSourcePaths = options.sourcePaths
+		
+		mUrlMappingsClassName = options.urlMappingsClassName
+		
+		mPackagePrefix = StringUtils.trimToEmpty(options.controllerPackageName)
+		
+		if (!mPackagePrefix.isEmpty())
+		{
+			mPackagePrefix += '.'
+		}				
 	}
 	
 	def handleRequest(
@@ -38,8 +52,7 @@ class GrailsControllerAdapter
 		HttpServletResponse response, 
 		Model model,
 		ServletContext servletContext, 
-		ApplicationContext applicationContext,
-		Map options
+		ApplicationContext applicationContext
   ) 
 	{		
 		def grailsWebRequest = new GrailsWebRequest(request, response,
@@ -59,14 +72,12 @@ class GrailsControllerAdapter
 		
 		if (mCachedUrlMappingsClass == null)
 		{
-			groovyScriptEngine = makeGroovyScriptEngine(options)
+			groovyScriptEngine = makeGroovyScriptEngine()
 			
-			urlMappingsClass = loadClass(options.urlMappingsClassName, 
+			urlMappingsClass = loadClass(mUrlMappingsClassName, 
 				groovyScriptEngine)
 
-			boolean developmentMode = (options.developmentMode ?: false)
-			
-			if (!developmentMode)
+			if (!mDevelopmentMode)
 			{				
 				mCachedUrlMappingsClass = urlMappingsClass
 			}
@@ -76,8 +87,7 @@ class GrailsControllerAdapter
 			urlMappingsClass = mCachedUrlMappingsClass
 		}
 		
-		def urlMatches = matchUri(urlMappingsClass, request, applicationContext,
-			options)
+		def urlMatches = matchUri(urlMappingsClass, request, applicationContext)
 												
 		if (urlMatches.length == 0) {
 			mLogger.warn("no url matches for " + uri)
@@ -102,7 +112,7 @@ class GrailsControllerAdapter
 		
 		urlMatch.configure(grailsWebRequest)
 		
-		def controllerName = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL,
+		String controllerName = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL,
 			urlMatch.controllerName) + "Controller"
 				
 		if (mLogger.isDebugEnabled())
@@ -110,19 +120,12 @@ class GrailsControllerAdapter
 			mLogger.debug("using controller " + controllerName)
 		}
 		
-		def packagePrefix = StringUtils.trimToEmpty(options.controllerPackageName) 
-			
-		if (!packagePrefix.isEmpty())
-		{
-			packagePrefix += '.'
-		}
-							
-		def controllerClass = loadClass(packagePrefix + controllerName, 
+		def controllerClass = loadClass(mPackagePrefix + controllerName, 
 			groovyScriptEngine) 
 								
 		def controller = controllerClass.newInstance() 					
 
-		enhanceController(controller, applicationContext, model, options)
+		enhanceController(controller, applicationContext, model)
 
 		def actionName = CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL,
 			urlMatch.actionName ?: controller.defaultAction ?: "index")
@@ -143,13 +146,11 @@ class GrailsControllerAdapter
 	}
 		
 	/** Create a script engine only if necessary. */
-	private GroovyScriptEngine makeGroovyScriptEngine(Map options) 
+	private GroovyScriptEngine makeGroovyScriptEngine() 
 	{
-		if (options.developmentMode) 
+		if (mDevelopmentMode) 
 		{		
-			//def roots = new String[options.sourcePaths.length]
-			//roots[0] = "src/main/groovy"									 
-			return new GroovyScriptEngine(options.sourcePaths)
+			return new GroovyScriptEngine(mSourcePaths)
 		}
 		
 		return null
@@ -173,8 +174,7 @@ class GrailsControllerAdapter
 	private def matchUri(
 		Class urlMappingsClass, 
 		HttpServletRequest request,
-		ApplicationContext applicationContext,
-		Map options
+		ApplicationContext applicationContext
   )
 	{
 		def evaluator = new DefaultUrlMappingEvaluator(applicationContext)
@@ -189,14 +189,14 @@ class GrailsControllerAdapter
 		def urlPathHelper = new UrlPathHelper()
 		
 		def uri = StringUtils.removeEnd(StringUtils.removeStart(
-			urlPathHelper.getPathWithinApplication(request), options.pathPrefix), 
-		  options.pathSuffixToStrip)
+			urlPathHelper.getPathWithinApplication(request), mPathPrefix), 
+		  mPathSuffixToStrip)
 		
 		mappingsHolder.matchAll(uri)
 	}
 	
 	private def enhanceController(Object controller, 
-		ApplicationContext applicationContext, Model model, Map options) 
+		ApplicationContext applicationContext, Model model) 
 	{
 		WebMetaUtils.registerCommonWebProperties(
 			controller.metaClass, applicationContext.getBean(GrailsApplication.class))
@@ -210,11 +210,11 @@ class GrailsControllerAdapter
 		}
 		
 		controller.metaClass.getPathPrefix = {
-			options.pathPrefix
+			mPathPrefix
 		}
 		
 		controller.metaClass.getPathSuffixToStrip = {
-			options.pathSuffixToStrip
+			mPathSuffixToStrip
 		}
 		
 		// Add the render(), redirect(), forward(), etc. methods to the controller
@@ -227,7 +227,13 @@ class GrailsControllerAdapter
 			controller, AutowireCapableBeanFactory.AUTOWIRE_BY_NAME, false)
 	}	
 	
+	private String mPathPrefix = null
+	private String mPathSuffixToStrip = null
+	private boolean mDevelopmentMode = false
+	private String[] mSourcePaths = null 
+	private String mUrlMappingsClassName = null
+	private String mPackagePrefix = null
 	private Class mCachedUrlMappingsClass = null
-		
+			
 	private Logger mLogger = LoggerFactory.getLogger(getClass().getName())
 }
