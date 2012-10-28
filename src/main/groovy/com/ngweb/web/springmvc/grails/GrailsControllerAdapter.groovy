@@ -33,6 +33,7 @@ class GrailsControllerAdapter
 	{
 		mPathPrefix = options.pathPrefix
 		mPathSuffixToStrip = options.pathSuffixToStrip
+		mUrlCaseFormat = options.urlCaseFormat
 		
 		mDevelopmentMode = (options.developmentMode ?: false)
 		mSourcePaths = options.sourcePaths
@@ -112,7 +113,7 @@ class GrailsControllerAdapter
 		
 		urlMatch.configure(grailsWebRequest)
 		
-		String controllerName = CaseFormat.LOWER_HYPHEN.to(CaseFormat.UPPER_CAMEL,
+		String controllerName = mUrlCaseFormat.to(CaseFormat.UPPER_CAMEL,
 			urlMatch.controllerName) + "Controller"
 				
 		if (mLogger.isDebugEnabled())
@@ -229,6 +230,7 @@ class GrailsControllerAdapter
 	
 	private String mPathPrefix = null
 	private String mPathSuffixToStrip = null
+	private CaseFormat mUrlCaseFormat = null
 	private boolean mDevelopmentMode = false
 	private String[] mSourcePaths = null 
 	private String mUrlMappingsClassName = null

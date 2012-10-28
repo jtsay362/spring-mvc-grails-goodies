@@ -3,6 +3,7 @@ package com.ngweb.web.springmvc.grails
 import java.lang.{Boolean => JBoolean}
 import java.util.{List => JList}
 import java.util.{Map => JMap, HashMap => JHashMap}
+import java.util.Locale
 
 import scala.reflect.BeanProperty
 
@@ -11,6 +12,8 @@ import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
 import org.apache.commons.lang.StringUtils 
+
+import com.google.common.base.CaseFormat
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -38,6 +41,7 @@ with ServletContextAware
   {
     require(pathPrefix != null)
     require(pathSuffixToStrip != null)
+    require(urlCaseFormat != null)
     require(sourcePaths != null)
   	require(controllerPackageName != null)
   	require(applicationContext != null)
@@ -46,7 +50,7 @@ with ServletContextAware
   	if (developmentMode.booleanValue())
   	{
   	  require(sourcePaths.length > 0)
-  	}
+  	}        
     
     // Prevent warnings
     servletContext.setAttribute(
@@ -122,11 +126,13 @@ with ServletContextAware
     val optionsMap = new JHashMap[String, Object]()
     optionsMap.put(OPTION_NAME_PATH_PREFIX, pathPrefix)
     optionsMap.put(OPTION_NAME_PATH_SUFFIX_TO_STRIP, pathSuffixToStrip)
-    optionsMap.put(OPTION_NAME_URL_CASE_FORMAT, urlCaseFormat)
+    optionsMap.put(OPTION_NAME_URL_CASE_FORMAT, classOf[CaseFormat].
+        getField(urlCaseFormat.toUpperCase(Locale.US)).get(null))
+                
     optionsMap.put(OPTION_NAME_SOURCE_PATHS, sourcePaths)
     optionsMap.put(OPTION_NAME_URL_MAPPINGS_CLASS_NAME, urlMappingsClassName)
     optionsMap.put(OPTION_NAME_CONTROLLER_PACKAGE_NAME, controllerPackageName)
-    optionsMap.put(OPTION_NAME_DEVELOPMENT_MODE, developmentMode)
+    optionsMap.put(OPTION_NAME_DEVELOPMENT_MODE, developmentMode)    
     optionsMap
   }
   
