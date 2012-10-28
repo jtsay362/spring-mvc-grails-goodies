@@ -1,0 +1,114 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  
+  <parent>
+	  <groupId>com.ngweb</groupId>
+	  <artifactId>scala-parent</artifactId>
+	  <version>0.0.1-SNAPSHOT</version>  
+  </parent>
+  
+  <groupId>com.ngweb</groupId>
+  <artifactId>spring-mvc-grails-goodies</artifactId>
+  <version>0.1.0-SNAPSHOT</version>
+  <name>Spring MVC Grails Goodies</name>
+  <inceptionYear>2012</inceptionYear>
+
+  <dependencies>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>servlet-api</artifactId>
+      <version>${servlet.api.version}</version>
+      <scope>provided</scope>
+    </dependency>  
+    <dependency>
+      <groupId>commons-lang</groupId>
+      <artifactId>commons-lang</artifactId>
+      <version>${commons.lang.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.google.guava</groupId>
+      <artifactId>guava</artifactId>
+      <version>${guava.version}</version>
+    </dependency>    
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-webmvc</artifactId>
+      <version>${spring.version}</version>
+    </dependency>     
+    <dependency>
+		  <groupId>org.codehaus.groovy</groupId>
+		  <artifactId>groovy</artifactId>
+		  <version>${groovy.version}</version>
+		</dependency>
+		<dependency>
+		  <groupId>org.codehaus.groovy</groupId>
+      <artifactId>groovy-templates</artifactId>
+      <version>${groovy.version}</version>
+    </dependency>    		   
+    <dependency>
+      <groupId>org.grails</groupId>
+      <artifactId>grails-core</artifactId>
+      <version>${grails.version}</version>
+    </dependency>               
+		<dependency>
+		  <groupId>org.grails</groupId>
+		  <artifactId>grails-spring</artifactId>
+		  <version>${grails.version}</version>
+		</dependency>
+    <dependency>
+      <groupId>org.grails</groupId>
+      <artifactId>grails-web</artifactId>
+      <version>${grails.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.grails</groupId>
+      <artifactId>grails-plugin-servlets</artifactId>
+      <version>${grails.version}</version>
+    </dependency>               		
+		<dependency>
+		  <groupId>org.grails</groupId>
+      <artifactId>grails-plugin-url-mappings</artifactId>
+      <version>${grails.version}</version>
+    </dependency>    		        
+  </dependencies>
+  <repositories>
+    <repository>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <id>Grails Maven Repository</id>
+      <name>libs-releases</name>
+      <url>http://repo.grails.org/grails/libs-releases</url>
+    </repository>
+  </repositories>  
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>net.alchim31.maven</groupId>
+        <artifactId>scala-maven-plugin</artifactId>
+        <version>${scala.maven.version}</version>
+      </plugin>
+			<plugin>
+		    <artifactId>maven-compiler-plugin</artifactId>
+		    <version>2.3.2</version>
+		    <configuration>
+		      <compilerId>groovy-eclipse-compiler</compilerId>
+		      <!-- set verbose to be true if you want lots of uninteresting messages -->
+		      <!-- <verbose>true</verbose> -->
+		    </configuration>
+		    <dependencies>
+		      <dependency>
+		        <groupId>org.codehaus.groovy</groupId>
+		        <artifactId>groovy-eclipse-compiler</artifactId>
+		        <version>2.7.0-01</version>
+		      </dependency>
+		    </dependencies>
+      </plugin>            
+    </plugins>
+  </build>
+  <properties>
+    <grails.version>2.1.1</grails.version>
+    <groovy.version>2.0.4</groovy.version>          
+  </properties>
+</project>
