@@ -106,8 +106,7 @@ with ServletContextAware
       	mav
       }       
       
-      case x => throw new RuntimeException("Unknown return class: "  + 
-          x.getClass)           
+      case _ => null           
     }               
   }
   

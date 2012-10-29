@@ -1,5 +1,7 @@
 package com.ngweb.web.springmvc.grails
 
+import java.lang.reflect.Modifier
+
 import groovy.util.GroovyScriptEngine
 
 import javax.servlet.ServletContext
@@ -65,8 +67,6 @@ class GrailsControllerAdapter
 		mLogger.info("new params = " +  RCH.currentRequestAttributes().params)
 		mLogger.info("new flash = " + RCH.currentRequestAttributes().flashScope) */
 				
-		def evaluator = new DefaultUrlMappingEvaluator(applicationContext)
-					
 		Class urlMappingsClass = null
 				
 		GroovyScriptEngine groovyScriptEngine = null		
@@ -88,8 +88,10 @@ class GrailsControllerAdapter
 			urlMappingsClass = mCachedUrlMappingsClass
 		}
 		
-		def urlMatches = matchUri(urlMappingsClass, request, applicationContext)
-												
+		def uriToMatch = computeUriToMatch(request) 		
+
+		def urlMatches = matchUri(uriToMatch, urlMappingsClass, applicationContext)
+													
 		if (urlMatches.length == 0) {
 			mLogger.warn("no url matches for " + uri)
 			response.sendError(404)
@@ -128,22 +130,41 @@ class GrailsControllerAdapter
 
 		enhanceController(controller, applicationContext, model)
 
-		def actionName = CaseFormat.LOWER_HYPHEN.to(CaseFormat.LOWER_CAMEL,
-			urlMatch.actionName ?: controller.defaultAction ?: "index")
+		def actionName = computeActionName(urlMatch, controller, controllerName) 
 	
 		if (mLogger.isDebugEnabled())
 		{
 			mLogger.debug("using action " + actionName)
 		}
 									
-	  def rv = controller."${actionName}"()
+		if (actionName == null)
+		{
+			if (mLogger.isDebugEnabled())
+			{
+				mLogger.debug("no action found, returning default view " + uriToMatch)
+			}
 
-		if (mLogger.isDebugEnabled()) 
-		{			 		
-			mLogger.debug("controller returned " + rv)
+			// No action defined, just use default view			
+			String rv = mPathPrefix + uriToMatch
+			
+			if (rv.endsWith("/")) 
+			{
+				rv += "index"
+			}			
+			
+			rv
+		} 
+		else 
+		{
+		  def rv = controller."${actionName}"()
+	
+			if (mLogger.isDebugEnabled()) 
+			{			 		
+				mLogger.debug("controller returned " + rv)
+			}
+			
+			return rv
 		}
-		
-		controller.modelAndView
 	}
 		
 	/** Create a script engine only if necessary. */
@@ -172,30 +193,105 @@ class GrailsControllerAdapter
 		gse.loadScriptByName(pathName + ".groovy")						
 	} 
 	
-	private def matchUri(
-		Class urlMappingsClass, 
-		HttpServletRequest request,
-		ApplicationContext applicationContext
+	private String computeUriToMatch( 
+		HttpServletRequest request
   )
-	{
+	{		
+		def urlPathHelper = new UrlPathHelper()
+		
+		StringUtils.removeEnd(StringUtils.removeStart(
+			urlPathHelper.getPathWithinApplication(request), mPathPrefix), 
+		  mPathSuffixToStrip)
+	}
+	
+	private def matchUri(
+		String uriToMatch,
+		Class urlMappingsClass,
+		ApplicationContext applicationContext
+	) {
 		def evaluator = new DefaultUrlMappingEvaluator(applicationContext)
 		
 		def mappingClass = new DefaultGrailsUrlMappingsClass(urlMappingsClass)
 		
 		def mappingList = evaluator.evaluateMappings(
-			mappingClass.getMappingsClosure())
+			mappingClass.mappingsClosure)
 		
 		def mappingsHolder = new DefaultUrlMappingsHolder(mappingList)
 						
-		def urlPathHelper = new UrlPathHelper()
+		return mappingsHolder.matchAll(uriToMatch)		
+	}	
 		
-		def uri = StringUtils.removeEnd(StringUtils.removeStart(
-			urlPathHelper.getPathWithinApplication(request), mPathPrefix), 
-		  mPathSuffixToStrip)
+	private String computeActionName(
+		UrlMappingInfo urlMatch, 
+		Object controller,
+		String controllerName) {
 		
-		mappingsHolder.matchAll(uri)
+		String actionName = urlMatch.actionName
+		
+		if (actionName == null) 
+		{
+			if (controller.metaClass.getMetaProperty("defaultAction"))
+			{
+				actionName = controller.defaultAction
+			}
+		}
+						
+		if (actionName == null) 
+		{
+			
+			/* We get methods from Object like wait() that match. So the 
+			number of methods is always > 1 and this is not a good criteria.
+			
+			boolean foundIndex = false
+			int numMethods = 0
+			String lastMethodName = null
+						
+			def methods = controller.metaClass.methods.each {
+				method ->
+				if (Modifier.isPublic(method.modifiers) &&
+						!Modifier.isAbstract(method.modifiers) &&
+				    (method.parameterTypes.length == 0)) 
+				{
+					if (mLogger.isTraceEnabled()) 
+					{
+						mLogger.trace("Matching method " + method.name)
+					}
+					
+					String name = method.name
+					
+					if (name == "index") {
+						foundIndex = true
+					}
+					numMethods++						
+					lastMethodName = name				
+				} else {
+					if (mLogger.isTraceEnabled())
+					{
+						mLogger.debug("Non matching method " + method.name)
+					}
+				}																
+			}
+			
+			if (foundIndex) {
+				actionName = "index"
+			} 
+			else if (numMethods == 1) {
+				actionName = lastMethodName
+			} */
+			
+			if (controller.metaClass.getMetaMethod("index")) 
+			{
+				actionName = "index"
+			}			
+		}
+		
+		if (actionName == null) {
+			return null
+		}						
+			
+		mUrlCaseFormat.to(CaseFormat.LOWER_CAMEL, actionName)
 	}
-	
+		
 	private def enhanceController(Object controller, 
 		ApplicationContext applicationContext, Model model) 
 	{

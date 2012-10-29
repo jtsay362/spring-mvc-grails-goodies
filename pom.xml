@@ -45,30 +45,65 @@
       <artifactId>groovy-templates</artifactId>
       <version>${groovy.version}</version>
     </dependency>    		   
-    <dependency>
-      <groupId>org.grails</groupId>
-      <artifactId>grails-core</artifactId>
-      <version>${grails.version}</version>
-    </dependency>               
 		<dependency>
 		  <groupId>org.grails</groupId>
 		  <artifactId>grails-spring</artifactId>
 		  <version>${grails.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+        </exclusion>                                        
+      </exclusions>		  
 		</dependency>
     <dependency>
       <groupId>org.grails</groupId>
       <artifactId>grails-web</artifactId>
       <version>${grails.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>servlet-api</artifactId>
+        </exclusion>      
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+        </exclusion> 
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>jsp-api</artifactId>
+        </exclusion>                    
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>jstl</artifactId>
+        </exclusion>    
+        <exclusion>
+          <groupId>taglibs</groupId>
+          <artifactId>standard</artifactId>
+        </exclusion>                       
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.grails</groupId>
       <artifactId>grails-plugin-servlets</artifactId>
       <version>${grails.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+        </exclusion>                                        
+      </exclusions>
     </dependency>               		
 		<dependency>
 		  <groupId>org.grails</groupId>
       <artifactId>grails-plugin-url-mappings</artifactId>
       <version>${grails.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.servlet</groupId>
+          <artifactId>javax.servlet-api</artifactId>
+        </exclusion>                                        
+      </exclusions>      
     </dependency>    		        
   </dependencies>
   <repositories>
