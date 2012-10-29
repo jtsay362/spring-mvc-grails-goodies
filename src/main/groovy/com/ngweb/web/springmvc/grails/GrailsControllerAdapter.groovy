@@ -67,39 +67,40 @@ class GrailsControllerAdapter
 		mLogger.info("new params = " +  RCH.currentRequestAttributes().params)
 		mLogger.info("new flash = " + RCH.currentRequestAttributes().flashScope) */
 				
-		Class urlMappingsClass = null
+		UrlMappingsHolder urlMappingsHolder = null
 				
 		GroovyScriptEngine groovyScriptEngine = null		
-		
-		if (mCachedUrlMappingsClass == null)
+					
+		if (mCachedUrlMappingsHolder == null)
 		{
 			groovyScriptEngine = makeGroovyScriptEngine()
 			
-			urlMappingsClass = loadClass(mUrlMappingsClassName, 
+			def urlMappingsClass = loadClass(mUrlMappingsClassName, 
 				groovyScriptEngine)
 
+			urlMappingsHolder = makeUrlMappingsHolder(urlMappingsClass,
+				applicationContext)
+			
 			if (!mDevelopmentMode)
 			{				
-				mCachedUrlMappingsClass = urlMappingsClass
+				mCachedUrlMappingsHolder = urlMappingsHolder
 			}
 		} 
 		else  
 		{
-			urlMappingsClass = mCachedUrlMappingsClass
+			urlMappingsHolder = mCachedUrlMappingsHolder
 		}
 		
 		def uriToMatch = computeUriToMatch(request) 		
 
-		def urlMatches = matchUri(uriToMatch, urlMappingsClass, applicationContext)
+		def urlMatch = matchUri(uriToMatch, urlMappingsHolder)
 													
-		if (urlMatches.length == 0) {
+		if (urlMatch == null) {
 			mLogger.warn("no url matches for " + uri)
 			response.sendError(404)
 			return null
 		}
 		
-		def urlMatch = urlMatches[0]
-						
 		def explicitUri = urlMatch.getURI()
 		 
 		// Needs test
@@ -152,7 +153,7 @@ class GrailsControllerAdapter
 				rv += "index"
 			}			
 			
-			rv
+			return rv
 		} 
 		else 
 		{
@@ -163,7 +164,7 @@ class GrailsControllerAdapter
 				mLogger.debug("controller returned " + rv)
 			}
 			
-			return rv
+			return controller.modelAndView
 		}
 	}
 		
@@ -204,21 +205,30 @@ class GrailsControllerAdapter
 		  mPathSuffixToStrip)
 	}
 	
-	private def matchUri(
-		String uriToMatch,
-		Class urlMappingsClass,
-		ApplicationContext applicationContext
-	) {
+	private UrlMappingsHolder makeUrlMappingsHolder(Class urlMappingsClass,
+		ApplicationContext applicationContext) {
 		def evaluator = new DefaultUrlMappingEvaluator(applicationContext)
 		
 		def mappingClass = new DefaultGrailsUrlMappingsClass(urlMappingsClass)
 		
-		def mappingList = evaluator.evaluateMappings(
-			mappingClass.mappingsClosure)
+		def urlMappingsList = evaluator.evaluateMappings(mappingClass.mappingsClosure)
 		
-		def mappingsHolder = new DefaultUrlMappingsHolder(mappingList)
-						
-		return mappingsHolder.matchAll(uriToMatch)		
+		new DefaultUrlMappingsHolder(urlMappingsList)
+	}
+	
+	private def matchUri(
+		String uriToMatch,
+		UrlMappingsHolder urlMappingsHolder
+	) {			
+		// TODO: add option to just return the first matching rule	 				
+		UrlMappingInfo[] urlMatches = urlMappingsHolder.matchAll(uriToMatch)
+		
+		if (urlMatches.length == 0)
+		{
+			return null
+		}
+
+		return urlMatches[0]			
 	}	
 		
 	private String computeActionName(
@@ -331,7 +341,7 @@ class GrailsControllerAdapter
 	private String[] mSourcePaths = null 
 	private String mUrlMappingsClassName = null
 	private String mPackagePrefix = null
-	private Class mCachedUrlMappingsClass = null
+	private UrlMappingsHolder mCachedUrlMappingsHolder = null
 			
 	private Logger mLogger = LoggerFactory.getLogger(getClass().getName())
 }
