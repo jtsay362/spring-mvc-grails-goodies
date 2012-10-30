@@ -127,7 +127,7 @@ with ServletContextAware
     optionsMap.put(OPTION_NAME_PATH_SUFFIX_TO_STRIP, pathSuffixToStrip)
     optionsMap.put(OPTION_NAME_URL_CASE_FORMAT, classOf[CaseFormat].
         getField(urlCaseFormat.toUpperCase(Locale.US)).get(null))
-                
+    optionsMap.put(OPTION_NAME_MATCH_ALL_PATTERNS, matchAllPatterns)
     optionsMap.put(OPTION_NAME_SOURCE_PATHS, sourcePaths)
     optionsMap.put(OPTION_NAME_URL_MAPPINGS_CLASS_NAME, urlMappingsClassName)
     optionsMap.put(OPTION_NAME_CONTROLLER_PACKAGE_NAME, controllerPackageName)
@@ -145,6 +145,9 @@ with ServletContextAware
     
   @BeanProperty
   protected var urlCaseFormat : String = DEFAULT_URL_CASE_FORMAT
+  
+  @BeanProperty
+  protected var matchAllPatterns : JBoolean = DEFAULT_MATCH_ALL_PATTERNS
   
   @BeanProperty
   protected var sourcePaths : Array[String] = DEFAULT_SOURCE_PATHS 
@@ -172,6 +175,7 @@ object GrailsLikeController
   val OPTION_NAME_PATH_PREFIX = "pathPrefix"
   val OPTION_NAME_PATH_SUFFIX_TO_STRIP = "pathSuffixToStrip"
   val OPTION_NAME_URL_CASE_FORMAT = "urlCaseFormat"    
+  val OPTION_NAME_MATCH_ALL_PATTERNS = "matchAllPatterns"
   val OPTION_NAME_SOURCE_PATHS = "sourcePaths"  
   val OPTION_NAME_URL_MAPPINGS_CLASS_NAME = "urlMappingsClassName"
   val OPTION_NAME_CONTROLLER_PACKAGE_NAME = "controllerPackageName"
@@ -180,6 +184,7 @@ object GrailsLikeController
   val DEFAULT_PATH_PREFIX = "/grails"
   val DEFAULT_PATH_SUFFIX_TO_STRIP = ""
   val DEFAULT_URL_CASE_FORMAT = "LOWER_HYPHEN"
+  val DEFAULT_MATCH_ALL_PATTERNS = JBoolean.TRUE
   val DEFAULT_SOURCE_PATHS = Array("src/main/groovy")  
   val DEFAULT_URL_MAPPINGS_CLASS_NAME = "com.ngweb.web.springmvc.grails.UrlMappings"
   val DEFAULT_CONTROLLER_PACKAGE_NAME = "com.ngweb.web.springmvc.grails"  

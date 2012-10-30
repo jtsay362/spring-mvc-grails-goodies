@@ -41,6 +41,7 @@ class GrailsControllerAdapter
 		mSourcePaths = options.sourcePaths
 		
 		mUrlMappingsClassName = options.urlMappingsClassName
+		mMatchAllPatterns = options.matchAllPatterns ?: false
 		
 		mPackagePrefix = StringUtils.trimToEmpty(options.controllerPackageName)
 		
@@ -93,7 +94,7 @@ class GrailsControllerAdapter
 		
 		def uriToMatch = computeUriToMatch(request) 		
 
-		def urlMatch = matchUri(uriToMatch, urlMappingsHolder)
+		def urlMatch = matchUri(uriToMatch, request.method, urlMappingsHolder)
 													
 		if (urlMatch == null) {
 			mLogger.warn("no url matches for " + uri)
@@ -217,18 +218,24 @@ class GrailsControllerAdapter
 	}
 	
 	private def matchUri(
-		String uriToMatch,
+		String uri,
+		String methodName,
 		UrlMappingsHolder urlMappingsHolder
 	) {			
-		// TODO: add option to just return the first matching rule	 				
-		UrlMappingInfo[] urlMatches = urlMappingsHolder.matchAll(uriToMatch)
+		if (mMatchAllPatterns) 
+		{	 				
+			UrlMappingInfo[] urlMatches = urlMappingsHolder.matchAll(uri, methodName)
 		
-		if (urlMatches.length == 0)
-		{
-			return null
-		}
+			if (urlMatches.length == 0)
+			{
+				return null
+			}
 
-		return urlMatches[0]			
+			return urlMatches[0]
+		}
+		
+		return urlMappingsHolder.match(uri)
+					
 	}	
 		
 	private String computeActionName(
@@ -338,6 +345,7 @@ class GrailsControllerAdapter
 	private String mPathSuffixToStrip = null
 	private CaseFormat mUrlCaseFormat = null
 	private boolean mDevelopmentMode = false
+	private boolean mMatchAllPatterns = false
 	private String[] mSourcePaths = null 
 	private String mUrlMappingsClassName = null
 	private String mPackagePrefix = null
