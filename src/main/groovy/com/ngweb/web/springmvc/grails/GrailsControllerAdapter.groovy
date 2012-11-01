@@ -2,6 +2,8 @@ package com.ngweb.web.springmvc.grails
 
 import java.lang.reflect.Modifier
 
+import java.util.Map
+
 import groovy.util.GroovyScriptEngine
 
 import javax.servlet.ServletContext
@@ -13,8 +15,9 @@ import org.apache.commons.lang.StringUtils
 import org.springframework.beans.factory.config.AutowireCapableBeanFactory
 import org.springframework.context.ApplicationContext
 import org.springframework.ui.Model
-import org.springframework.web.util.UrlPathHelper
 import org.springframework.web.context.request.RequestContextHolder as RCH
+import org.springframework.web.servlet.ModelAndView
+import org.springframework.web.util.UrlPathHelper
 
 import org.codehaus.groovy.grails.commons.GrailsApplication
 import org.codehaus.groovy.grails.commons.DefaultGrailsUrlMappingsClass
@@ -31,9 +34,10 @@ import org.slf4j.LoggerFactory
 
 class GrailsControllerAdapter 
 {	
-	GrailsControllerAdapter(Map options) 
-	{
+	GrailsControllerAdapter(Map options, ApplicationContext applicationContext) 
+	{				
 		mPathPrefix = options.pathPrefix
+		mViewPathPrefixToStrip = options.viewPathPrefixToStrip
 		mPathSuffixToStrip = options.pathSuffixToStrip
 		mUrlCaseFormat = options.urlCaseFormat
 		
@@ -48,19 +52,20 @@ class GrailsControllerAdapter
 		if (!mPackagePrefix.isEmpty())
 		{
 			mPackagePrefix += '.'
-		}				
+		}	
+		
+		mApplicationContext = applicationContext			
 	}
 	
 	def handleRequest(
 		HttpServletRequest request, 
 		HttpServletResponse response, 
 		Model model,
-		ServletContext servletContext, 
-		ApplicationContext applicationContext
+		ServletContext servletContext
   ) 
 	{		
 		def grailsWebRequest = new GrailsWebRequest(request, response,
-			servletContext, applicationContext)							
+			servletContext, mApplicationContext)							
 		
 		RCH.setRequestAttributes(grailsWebRequest)
 
@@ -79,8 +84,7 @@ class GrailsControllerAdapter
 			def urlMappingsClass = loadClass(mUrlMappingsClassName, 
 				groovyScriptEngine)
 
-			urlMappingsHolder = makeUrlMappingsHolder(urlMappingsClass,
-				applicationContext)
+			urlMappingsHolder = makeUrlMappingsHolder(urlMappingsClass)
 			
 			if (!mDevelopmentMode)
 			{				
@@ -130,7 +134,7 @@ class GrailsControllerAdapter
 								
 		def controller = controllerClass.newInstance() 					
 
-		enhanceController(controller, applicationContext, model)
+		enhanceController(controller, model)
 
 		def actionName = computeActionName(urlMatch, controller, controllerName) 
 	
@@ -164,8 +168,15 @@ class GrailsControllerAdapter
 			{			 		
 				mLogger.debug("controller returned " + rv)
 			}
-			
-			return controller.modelAndView
+
+			if (rv == null)
+			{			
+				return controller.modelAndView
+			} else if ((rv instanceof String) || (rv instanceof Map)) {
+				return rv;
+			}
+
+			return rv			
 		}
 	}
 		
@@ -206,9 +217,8 @@ class GrailsControllerAdapter
 		  mPathSuffixToStrip)
 	}
 	
-	private UrlMappingsHolder makeUrlMappingsHolder(Class urlMappingsClass,
-		ApplicationContext applicationContext) {
-		def evaluator = new DefaultUrlMappingEvaluator(applicationContext)
+	private UrlMappingsHolder makeUrlMappingsHolder(Class urlMappingsClass) {
+		def evaluator = new DefaultUrlMappingEvaluator(mApplicationContext)
 		
 		def mappingClass = new DefaultGrailsUrlMappingsClass(urlMappingsClass)
 		
@@ -221,7 +231,8 @@ class GrailsControllerAdapter
 		String uri,
 		String methodName,
 		UrlMappingsHolder urlMappingsHolder
-	) {			
+	) 
+	{			
 		if (mMatchAllPatterns) 
 		{	 				
 			UrlMappingInfo[] urlMatches = urlMappingsHolder.matchAll(uri, methodName)
@@ -241,8 +252,8 @@ class GrailsControllerAdapter
 	private String computeActionName(
 		UrlMappingInfo urlMatch, 
 		Object controller,
-		String controllerName) {
-		
+		String controllerName) 
+	{	
 		String actionName = urlMatch.actionName
 		
 		if (actionName == null) 
@@ -310,21 +321,25 @@ class GrailsControllerAdapter
 	}
 		
 	private def enhanceController(Object controller, 
-		ApplicationContext applicationContext, Model model) 
+		Model model) 
 	{
 		WebMetaUtils.registerCommonWebProperties(
-			controller.metaClass, applicationContext.getBean(GrailsApplication.class))
+			controller.metaClass, mApplicationContext.getBean(GrailsApplication.class))
 					
 		controller.metaClass.getModel = {
 			model.asMap()
 		}
 
 		controller.metaClass.getApplicationContext = {
-			applicationContext
+			mApplicationContext
 		}
 		
 		controller.metaClass.getPathPrefix = {
 			mPathPrefix
+		}
+
+		controller.metaClass.getViewPathPrefixToStrip = {
+			mViewPathPrefixToStrip
 		}
 		
 		controller.metaClass.getPathSuffixToStrip = {
@@ -337,11 +352,13 @@ class GrailsControllerAdapter
 		enhancer.addApi(controllersApi)
 		enhancer.enhance(controller.metaClass)
 		
-		applicationContext.autowireCapableBeanFactory.autowireBeanProperties(
+		mApplicationContext.autowireCapableBeanFactory.autowireBeanProperties(
 			controller, AutowireCapableBeanFactory.AUTOWIRE_BY_NAME, false)
 	}	
 	
+	private ApplicationContext mApplicationContext = null
 	private String mPathPrefix = null
+	private String mViewPathPrefixToStrip = null
 	private String mPathSuffixToStrip = null
 	private CaseFormat mUrlCaseFormat = null
 	private boolean mDevelopmentMode = false

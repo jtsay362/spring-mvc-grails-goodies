@@ -26,7 +26,9 @@ import org.springframework.ui.ExtendedModelMap
 import org.springframework.web.context.ServletContextAware
 import org.springframework.web.servlet.mvc.Controller 
 import org.springframework.web.servlet._
+import org.springframework.web.servlet.support.RequestContextUtils
 import org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator
+
 
 import org.codehaus.groovy.grails.plugins.web.ServletsGrailsPluginSupport
 
@@ -40,6 +42,7 @@ with ServletContextAware
   afterPropertiesSet() : Unit = 
   {
     require(pathPrefix != null)
+    require(viewPathPrefixToStrip != null)
     require(pathSuffixToStrip != null)
     require(urlCaseFormat != null)
     require(sourcePaths != null)
@@ -53,13 +56,14 @@ with ServletContextAware
   	}        
     
     // Prevent warnings
+    
     servletContext.setAttribute(
-      "org.codehaus.groovy.grails.APPLICATION_CONTEXT", applicationContext)                         	
-  	
+      "org.codehaus.groovy.grails.APPLICATION_CONTEXT", applicationContext)
+      
   	ServletsGrailsPluginSupport.enhanceServletApi()
   	    	
   	mGrailsControllerAdapter = 
-  	  new GrailsControllerAdapter(makeOptionsMap())  	
+  	  new GrailsControllerAdapter(makeOptionsMap(), applicationContext)  	
   }
   
   override def
@@ -71,12 +75,12 @@ with ServletContextAware
   {
     require(request != null)
     require(response != null)
-    
+
     val springModel = new ExtendedModelMap()
     addDefaultObjects(request, springModel)
     
     val rv = mGrailsControllerAdapter.handleRequest(request, response, 
-        springModel, servletContext, applicationContext)
+        springModel, servletContext)
                             
     def computeDefaultViewName() : String =
     {      
@@ -84,7 +88,7 @@ with ServletContextAware
         new DefaultRequestToViewNameTranslator()
           
       val viewName = requestToViewNameTranslator.getViewName(request)
-      if (pathPrefix.isEmpty()) {        
+      if (viewPathPrefixToStrip.isEmpty()) {        
       	viewName        
       } else {
         StringUtils.removeStart(viewName, pathPrefix.substring(1) + "/")
@@ -124,6 +128,7 @@ with ServletContextAware
   {   
     val optionsMap = new JHashMap[String, Object]()
     optionsMap.put(OPTION_NAME_PATH_PREFIX, pathPrefix)
+    optionsMap.put(OPTION_NAME_VIEW_PATH_PREFIX_TO_STRIP, viewPathPrefixToStrip)
     optionsMap.put(OPTION_NAME_PATH_SUFFIX_TO_STRIP, pathSuffixToStrip)
     optionsMap.put(OPTION_NAME_URL_CASE_FORMAT, classOf[CaseFormat].
         getField(urlCaseFormat.toUpperCase(Locale.US)).get(null))
@@ -139,6 +144,9 @@ with ServletContextAware
   
   @BeanProperty
   protected var pathPrefix : String = DEFAULT_PATH_PREFIX
+  
+  @BeanProperty
+  protected var viewPathPrefixToStrip : String = DEFAULT_VIEW_PATH_PREFIX_TO_STRIP  
 
   @BeanProperty
   protected var pathSuffixToStrip : String = DEFAULT_PATH_SUFFIX_TO_STRIP
@@ -173,6 +181,7 @@ with ServletContextAware
 object GrailsLikeController 
 {
   val OPTION_NAME_PATH_PREFIX = "pathPrefix"
+  val OPTION_NAME_VIEW_PATH_PREFIX_TO_STRIP = "viewPathPrefixToStrip"
   val OPTION_NAME_PATH_SUFFIX_TO_STRIP = "pathSuffixToStrip"
   val OPTION_NAME_URL_CASE_FORMAT = "urlCaseFormat"    
   val OPTION_NAME_MATCH_ALL_PATTERNS = "matchAllPatterns"
@@ -182,6 +191,7 @@ object GrailsLikeController
   val OPTION_NAME_DEVELOPMENT_MODE = "developmentMode"
     
   val DEFAULT_PATH_PREFIX = "/grails"
+  val DEFAULT_VIEW_PATH_PREFIX_TO_STRIP = ""
   val DEFAULT_PATH_SUFFIX_TO_STRIP = ""
   val DEFAULT_URL_CASE_FORMAT = "LOWER_HYPHEN"
   val DEFAULT_MATCH_ALL_PATTERNS = JBoolean.TRUE
