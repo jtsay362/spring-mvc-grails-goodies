@@ -101,7 +101,7 @@ class GrailsControllerAdapter
 		def urlMatch = matchUri(uriToMatch, request.method, urlMappingsHolder)
 													
 		if (urlMatch == null) {
-			mLogger.warn("no url matches for " + uri)
+			mLogger.warn("no url matches for " + uriToMatch)
 			response.sendError(404)
 			return null
 		}
