@@ -55,6 +55,15 @@ with ServletContextAware
   	  require(sourcePaths.length > 0)
   	}        
     
+    // Canonicalize to "[prefix]/" or ""
+    if (pathPrefix.startsWith("/")) {
+    	pathPrefix = pathPrefix.substring(1);    	
+    }
+    
+   	if (!pathPrefix.isEmpty() && !pathPrefix.endsWith("/")) {
+   	  pathPrefix += "/";
+   	}
+    
     // Prevent warnings
     
     servletContext.setAttribute(
@@ -91,7 +100,7 @@ with ServletContextAware
       if (viewPathPrefixToStrip.isEmpty()) {        
       	viewName        
       } else {
-        StringUtils.removeStart(viewName, pathPrefix.substring(1) + "/")
+        StringUtils.removeStart(viewName, viewPathPrefixToStrip.substring(1) + "/")
       }
     }
     
@@ -190,7 +199,7 @@ object GrailsLikeController
   val OPTION_NAME_CONTROLLER_PACKAGE_NAME = "controllerPackageName"
   val OPTION_NAME_DEVELOPMENT_MODE = "developmentMode"
     
-  val DEFAULT_PATH_PREFIX = "/grails"
+  val DEFAULT_PATH_PREFIX = "grails/"
   val DEFAULT_VIEW_PATH_PREFIX_TO_STRIP = ""
   val DEFAULT_PATH_SUFFIX_TO_STRIP = ""
   val DEFAULT_URL_CASE_FORMAT = "LOWER_HYPHEN"

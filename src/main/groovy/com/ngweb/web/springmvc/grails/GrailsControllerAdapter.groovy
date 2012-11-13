@@ -36,7 +36,13 @@ class GrailsControllerAdapter
 {	
 	GrailsControllerAdapter(Map options, ApplicationContext applicationContext) 
 	{				
-		mPathPrefix = options.pathPrefix
+		// Remove both leading and trailing slashes
+		mPathPrefix = StringUtils.chomp(
+			StringUtils.removeStart(options.pathPrefix, "/"), "/")
+		
+		// Convert "prefix/" to "/prefix", leaving the empty string alone				
+		mLeadingSlashPathPrefix = StringUtils.chomp("/" + mPathPrefix, "/")		
+
 		mViewPathPrefixToStrip = options.viewPathPrefixToStrip
 		mPathSuffixToStrip = options.pathSuffixToStrip
 		mUrlCaseFormat = options.urlCaseFormat
@@ -151,7 +157,7 @@ class GrailsControllerAdapter
 			}
 
 			// No action defined, just use default view			
-			String rv = mPathPrefix + uriToMatch
+			String rv = mLeadingSlashPathPrefix + uriToMatch
 			
 			if (rv.endsWith("/")) 
 			{
@@ -213,7 +219,7 @@ class GrailsControllerAdapter
 		def urlPathHelper = new UrlPathHelper()
 		
 		StringUtils.removeEnd(StringUtils.removeStart(
-			urlPathHelper.getPathWithinApplication(request), mPathPrefix), 
+			urlPathHelper.getPathWithinApplication(request), mLeadingSlashPathPrefix), 
 		  mPathSuffixToStrip)
 	}
 	
@@ -358,6 +364,7 @@ class GrailsControllerAdapter
 	
 	private ApplicationContext mApplicationContext = null
 	private String mPathPrefix = null
+	private String mLeadingSlashPathPrefix = null
 	private String mViewPathPrefixToStrip = null
 	private String mPathSuffixToStrip = null
 	private CaseFormat mUrlCaseFormat = null
