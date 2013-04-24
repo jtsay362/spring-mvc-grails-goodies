@@ -24,6 +24,7 @@ import org.codehaus.groovy.grails.commons.DefaultGrailsUrlMappingsClass
 import org.codehaus.groovy.grails.commons.metaclass.MetaClassEnhancer
 import org.codehaus.groovy.grails.plugins.web.api.ControllersApi
 import org.codehaus.groovy.grails.web.mapping.*
+import org.codehaus.groovy.grails.web.metaclass.RedirectDynamicMethod
 import org.codehaus.groovy.grails.web.plugins.support.WebMetaUtils
 import org.codehaus.groovy.grails.web.servlet.mvc.GrailsWebRequest
 
@@ -354,10 +355,11 @@ class GrailsControllerAdapter
 		
 		// Add the render(), redirect(), forward(), etc. methods to the controller
 		def controllersApi = new ControllersApi()
+	
 		def enhancer = new MetaClassEnhancer()
 		enhancer.addApi(controllersApi)
 		enhancer.enhance(controller.metaClass)
-		
+							
 		mApplicationContext.autowireCapableBeanFactory.autowireBeanProperties(
 			controller, AutowireCapableBeanFactory.AUTOWIRE_BY_NAME, false)
 	}	

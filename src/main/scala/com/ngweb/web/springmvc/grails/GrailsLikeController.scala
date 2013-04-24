@@ -97,6 +97,9 @@ with ServletContextAware
         new DefaultRequestToViewNameTranslator()
           
       val viewName = requestToViewNameTranslator.getViewName(request)
+      
+      mLogger.info("Got view name = " + viewName)
+      
       if (viewPathPrefixToStrip.isEmpty()) {        
       	viewName        
       } else {
