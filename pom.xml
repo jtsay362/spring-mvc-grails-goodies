@@ -4,12 +4,12 @@
   <parent>
 	  <groupId>com.ngweb</groupId>
 	  <artifactId>scala-parent</artifactId>
-	  <version>0.0.3-SNAPSHOT</version>  
+	  <version>0.0.4-SNAPSHOT</version>
   </parent>
   
   <groupId>com.ngweb</groupId>
   <artifactId>spring-mvc-grails-goodies</artifactId>
-  <version>0.2.0-SNAPSHOT</version>
+  <version>0.3.0-SNAPSHOT</version>
   <name>Spring MVC Grails Goodies</name>
   <inceptionYear>2013</inceptionYear>
 
